@@ -1,37 +1,43 @@
 /**
  * Global error handling middleware
+ * Generic error handling without specific database error codes
  */
 const errorHandler = (err, req, res, next) => {
+  // Log the error for server-side debugging
   console.error(`Error: ${err.message}`);
   console.error(err.stack);
 
-  // Check if it's a PostgreSQL error
-  if (err.code && err.code.startsWith("22P02")) {
-    // Invalid text representation (likely ENUM value issue)
-    return res.status(400).json({
-      success: false,
-      message: "Invalid input value for database enum type",
-      details: err.message,
-    });
-  }
+  // Check if the error has a status code already assigned
+  const statusCode = err.statusCode || 500;
 
-  if (err.code && err.code === "23505") {
-    // Unique constraint violation
-    return res.status(409).json({
-      success: false,
-      message: "Resource already exists",
-      details: err.message,
-    });
-  }
-
-  // Default server error
-  res.status(500).json({
+  // Create a generic response object
+  const errorResponse = {
     success: false,
-    message: "Internal server error",
-    details: process.env.NODE_ENV === "development" ? err.message : undefined,
-  });
+    message: err.message || "Something went wrong",
+  };
+
+  // Add error details in development mode only
+  if (process.env.NODE_ENV === "development") {
+    errorResponse.details = err.stack;
+  }
+
+  // Send the response
+  res.status(statusCode).json(errorResponse);
+};
+
+/**
+ * Custom error handler factory
+ * @param {string} message - Error message
+ * @param {number} statusCode - HTTP status code
+ * @returns {Error} - Custom error object with statusCode
+ */
+const createError = (message, statusCode = 500) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
 };
 
 module.exports = {
   errorHandler,
+  createError,
 };
