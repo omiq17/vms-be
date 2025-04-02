@@ -24,6 +24,46 @@ const createVehicle = async (req, res, next) => {
       });
     }
 
+    // Validate boolean
+    if (typeof is_locked !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid is_locked. Must be a boolean (true or false)",
+      });
+    }
+
+    // Validate speed (should be between 0 and 200 km/h)
+    if (!Number.isInteger(speed) || speed < 0 || speed > 200) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid speed. Must be an integer between 0 and 200 km/h",
+      });
+    }
+
+    // Validate battery percentage (should be between 0 and 100)
+    if (!Number.isInteger(battery) || battery < 0 || battery > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid battery. Must be an integer between 0 and 100",
+      });
+    }
+
+    // Validate latitude (-90 to 90) and longitude (-180 to 180)
+    if (
+      typeof latitude !== "number" ||
+      latitude < -90 ||
+      latitude > 90 ||
+      typeof longitude !== "number" ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid location. Latitude must be -90 to 90, Longitude -180 to 180",
+      });
+    }
+
     const query = `
       INSERT INTO vms.vehicle 
         (type, is_locked, speed, battery, status, latitude, longitude) 
